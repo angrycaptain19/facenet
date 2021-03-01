@@ -173,12 +173,7 @@ def compute_facial_encodings(sess,images_placeholder,embeddings,phase_train_plac
         feed_dict = { images_placeholder:images, phase_train_placeholder:False }
         emb_array[start_index:end_index,:] = sess.run(embeddings, feed_dict=feed_dict)
 
-    facial_encodings = {}
-    for x in range(nrof_images):
-        facial_encodings[paths[x]] = emb_array[x,:]
-
-
-    return facial_encodings
+    return {paths[x]: emb_array[x,:] for x in range(nrof_images)}
 
 def get_onedir(paths):
     dataset = []
@@ -258,9 +253,7 @@ def parse_args():
     parser.add_argument('--batch_size', type=int, help='batch size', required=30)
     parser.add_argument('--input', type=str, help='Input dir of images', required=True)
     parser.add_argument('--output', type=str, help='Output dir of clusters', required=True)
-    args = parser.parse_args()
-
-    return args
+    return parser.parse_args()
 
 if __name__ == '__main__':
     """ Entry point """

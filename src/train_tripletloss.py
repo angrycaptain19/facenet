@@ -202,7 +202,7 @@ def train(args, sess, dataset, epoch, image_paths_placeholder, labels_placeholde
           embeddings, loss, train_op, summary_op, summary_writer, learning_rate_schedule_file,
           embedding_size, anchor, positive, negative, triplet_loss):
     batch_number = 0
-    
+
     if args.learning_rate>0.0:
         lr = args.learning_rate
     else:
@@ -210,7 +210,7 @@ def train(args, sess, dataset, epoch, image_paths_placeholder, labels_placeholde
     while batch_number < args.epoch_size:
         # Sample people randomly from the dataset
         image_paths, num_per_class = sample_people(dataset, args.people_per_batch, args.images_per_person)
-        
+
         print('Running forward pass on sampled images: ', end='')
         start_time = time.time()
         nrof_examples = args.people_per_batch * args.images_per_person
@@ -242,12 +242,11 @@ def train(args, sess, dataset, epoch, image_paths_placeholder, labels_placeholde
         sess.run(enqueue_op, {image_paths_placeholder: triplet_paths_array, labels_placeholder: labels_array})
         nrof_examples = len(triplet_paths)
         train_time = 0
-        i = 0
         emb_array = np.zeros((nrof_examples, embedding_size))
         loss_array = np.zeros((nrof_triplets,))
         summary = tf.Summary()
         step = 0
-        while i < nrof_batches:
+        for i in range(nrof_batches):
             start_time = time.time()
             batch_size = min(nrof_examples-i*args.batch_size, args.batch_size)
             feed_dict = {batch_size_placeholder: batch_size, learning_rate_placeholder: lr, phase_train_placeholder: True}
@@ -258,10 +257,9 @@ def train(args, sess, dataset, epoch, image_paths_placeholder, labels_placeholde
             print('Epoch: [%d][%d/%d]\tTime %.3f\tLoss %2.3f' %
                   (epoch, batch_number+1, args.epoch_size, duration, err))
             batch_number += 1
-            i += 1
             train_time += duration
             summary.value.add(tag='loss', simple_value=err)
-            
+
         # Add validation loss and accuracy to summary
         #pylint: disable=maybe-no-member
         summary.value.add(tag='time/selection', simple_value=selection_time)

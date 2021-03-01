@@ -25,9 +25,6 @@ def TemporaryDirectory():
 
 
 def main(args):
-    funnel_cmd = 'funnelReal'
-    funnel_model = 'people.train'
-
     output_dir = os.path.expanduser(args.output_dir)
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -39,6 +36,9 @@ def main(args):
     # Scale the image such that the face fills the frame when cropped to crop_size
     #scale = float(args.face_size) / args.image_size
     with TemporaryDirectory() as tmp_dir:
+        funnel_cmd = 'funnelReal'
+        funnel_model = 'people.train'
+
         for cls in dataset:
             output_class_dir = os.path.join(output_dir, cls.name)
             tmp_output_class_dir = os.path.join(tmp_dir, cls.name)
@@ -50,18 +50,17 @@ def main(args):
                 input_list_filename = os.path.join(tmp_dir, 'input_list.txt')
                 output_list_filename = os.path.join(tmp_dir, 'output_list.txt')
                 input_file = open(input_list_filename, 'w')
-                output_file = open(output_list_filename,'w')
-                for image_path in cls.image_paths:
-                    filename = os.path.split(image_path)[1]
-                    input_file.write(image_path+'\n')
-                    output_filename = os.path.join(tmp_output_class_dir, filename)
-                    output_file.write(output_filename+'\n')
-                    tmp_filenames.append(output_filename)
-                input_file.close()
-                output_file.close()
+                with open(output_list_filename,'w') as output_file:
+                    for image_path in cls.image_paths:
+                        filename = os.path.split(image_path)[1]
+                        input_file.write(image_path+'\n')
+                        output_filename = os.path.join(tmp_output_class_dir, filename)
+                        output_file.write(output_filename+'\n')
+                        tmp_filenames.append(output_filename)
+                    input_file.close()
                 cmd = args.funnel_dir+funnel_cmd + ' ' + input_list_filename + ' ' + args.funnel_dir+funnel_model + ' ' + output_list_filename
                 subprocess.call(cmd, shell=True)
-                
+
                 # Resize and crop images
                 if not os.path.exists(output_class_dir):
                     os.makedirs(output_class_dir)
@@ -76,7 +75,7 @@ def main(args):
                     output_filename = os.path.join(output_class_dir, filename+'.png')
                     print('Saving image %s' % output_filename)
                     misc.imsave(output_filename, img_crop)
-                    
+
                 # Remove tmp directory with images
                 shutil.rmtree(tmp_output_class_dir)
                 

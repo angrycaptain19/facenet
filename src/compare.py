@@ -81,14 +81,14 @@ def load_and_align_data(image_paths, image_size, margin, gpu_memory_fraction):
     minsize = 20 # minimum size of face
     threshold = [ 0.6, 0.7, 0.7 ]  # three steps's threshold
     factor = 0.709 # scale factor
-    
+
     print('Creating networks and loading parameters')
     with tf.Graph().as_default():
         gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_memory_fraction)
         sess = tf.Session(config=tf.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
         with sess.as_default():
             pnet, rnet, onet = align.detect_face.create_mtcnn(sess, None)
-  
+
     tmp_image_paths=copy.copy(image_paths)
     img_list = []
     for image in tmp_image_paths:
@@ -109,8 +109,7 @@ def load_and_align_data(image_paths, image_size, margin, gpu_memory_fraction):
         aligned = misc.imresize(cropped, (image_size, image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
         img_list.append(prewhitened)
-    images = np.stack(img_list)
-    return images
+    return np.stack(img_list)
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()

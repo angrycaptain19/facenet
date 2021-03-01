@@ -47,32 +47,30 @@ def main(args):
     images, cout_per_image, nrof_samples = load_and_align_data(args.image_files,args.image_size, args.margin, args.gpu_memory_fraction)
     with tf.Graph().as_default():
 
-       with tf.Session() as sess:
-      
+        with tf.Session() as sess:
             # Load the model
-                facenet.load_model(args.model)
+            facenet.load_model(args.model)
             # Get input and output tensors
-                images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
-                embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
-                phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
-
+            images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
+            embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
+            phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
             # Run forward pass to calculate embeddings
-                feed_dict = { images_placeholder: images , phase_train_placeholder:False}
-                emb = sess.run(embeddings, feed_dict=feed_dict)
-                classifier_filename_exp = os.path.expanduser(args.classifier_filename)
-                with open(classifier_filename_exp, 'rb') as infile:
-                    (model, class_names) = pickle.load(infile)
-                print('Loaded classifier model from file "%s"\n' % classifier_filename_exp)
-                predictions = model.predict_proba(emb)
-                best_class_indices = np.argmax(predictions, axis=1)
-                best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
-                k=0     
+            feed_dict = { images_placeholder: images , phase_train_placeholder:False}
+            emb = sess.run(embeddings, feed_dict=feed_dict)
+            classifier_filename_exp = os.path.expanduser(args.classifier_filename)
+            with open(classifier_filename_exp, 'rb') as infile:
+                (model, class_names) = pickle.load(infile)
+            print('Loaded classifier model from file "%s"\n' % classifier_filename_exp)
+            predictions = model.predict_proba(emb)
+            best_class_indices = np.argmax(predictions, axis=1)
+            best_class_probabilities = predictions[np.arange(len(best_class_indices)), best_class_indices]
+            k=0
 	    #print predictions       
-                for i in range(nrof_samples):
-                    print("\npeople in image %s :" %(args.image_files[i]))
-                    for j in range(cout_per_image[i]):
-                        print('%s: %.3f' % (class_names[best_class_indices[k]], best_class_probabilities[k]))
-                        k+=1
+            for i in range(nrof_samples):
+                print("\npeople in image %s :" %(args.image_files[i]))
+                for _ in range(cout_per_image[i]):
+                    print('%s: %.3f' % (class_names[best_class_indices[k]], best_class_probabilities[k]))
+                    k+=1
                     
 def load_and_align_data(image_paths, image_size, margin, gpu_memory_fraction):
 

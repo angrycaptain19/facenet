@@ -187,8 +187,8 @@ class AlignDlib:
 
         if bb is None:
             bb = self.getLargestFaceBoundingBox(rgbImg, skipMulti)
-            if bb is None:
-                return
+        if bb is None:
+            return
 
         if landmarks is None:
             landmarks = self.findLandmarks(rgbImg, bb)
@@ -199,6 +199,4 @@ class AlignDlib:
         #pylint: disable=maybe-no-member
         H = cv2.getAffineTransform(npLandmarks[npLandmarkIndices],
                                    imgDim * MINMAX_TEMPLATE[npLandmarkIndices]*scale + imgDim*(1-scale)/2)
-        thumbnail = cv2.warpAffine(rgbImg, H, (imgDim, imgDim))
-        
-        return thumbnail
+        return cv2.warpAffine(rgbImg, H, (imgDim, imgDim))

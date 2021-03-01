@@ -44,7 +44,7 @@ def main(args):
   
     img_mean = np.array([134.10714722, 102.52040863, 87.15436554])
     img_stddev = np.sqrt(np.array([3941.30175781, 2856.94287109, 2519.35791016]))
-  
+
     vae_def = importlib.import_module(args.vae_def)
     vae = vae_def.Vae(args.latent_var_size)
     gen_image_size = vae.get_image_size()
@@ -54,24 +54,24 @@ def main(args):
     if not os.path.isdir(model_dir):  # Create the model directory if it doesn't exist
         os.makedirs(model_dir)
     log_file_name = os.path.join(model_dir, 'logs.h5')
-    
+
     # Write arguments to a text file
     facenet.write_arguments_to_file(args, os.path.join(model_dir, 'arguments.txt'))
-        
+
     # Store some git revision info in a text file in the log directory
     src_path,_ = os.path.split(os.path.realpath(__file__))
     facenet.store_revision_info(src_path, model_dir, ' '.join(sys.argv))
-    
+
     with tf.Graph().as_default():
         tf.set_random_seed(args.seed)
         global_step = tf.Variable(0, trainable=False)
-        
+
         train_set = facenet.get_dataset(args.data_dir)
         image_list, _ = facenet.get_image_paths_and_labels(train_set)
-        
+
         # Create the input queue
         input_queue = tf.train.string_input_producer(image_list, shuffle=True)
-    
+
         nrof_preprocess_threads = 4
         image_per_thread = []
         for _ in range(nrof_preprocess_threads):
@@ -82,31 +82,31 @@ def main(args):
             image = tf.cast(image, tf.float32)
             #pylint: disable=no-member
             image_per_thread.append([image])
-    
+
         images = tf.train.batch_join(
             image_per_thread, batch_size=args.batch_size,
             capacity=4 * nrof_preprocess_threads * args.batch_size,
             allow_smaller_final_batch=False)
-        
+
         # Normalize
         images_norm = (images-img_mean) / img_stddev
 
         # Resize to appropriate size for the encoder 
         images_norm_resize = tf.image.resize_images(images_norm, (gen_image_size,gen_image_size))
-        
+
         # Create encoder network
         mean, log_variance = vae.encoder(images_norm_resize, True)
-        
+
         epsilon = tf.random_normal((tf.shape(mean)[0], args.latent_var_size))
         std = tf.exp(log_variance/2)
         latent_var = mean + epsilon * std
-        
+
         # Create decoder network
         reconstructed_norm = vae.decoder(latent_var, True)
-        
+
         # Un-normalize
         reconstructed = (reconstructed_norm*img_stddev) + img_mean
-        
+
         # Create reconstruction loss
         if args.reconstruction_loss_type=='PLAIN':
             images_resize = tf.image.resize_images(images, (gen_image_size,gen_image_size))
@@ -134,22 +134,19 @@ def main(args):
                 reconstruction_loss_list.append(reconstruction_loss)
             # Sum up the losses in for the different features
             reconstruction_loss = tf.add_n(reconstruction_loss_list, 'reconstruction_loss')
-        else:
-            pass
-        
         # Create KL divergence loss
         kl_loss = kl_divergence_loss(mean, log_variance)
         kl_loss_mean = tf.reduce_mean(kl_loss)
-        
+
         total_loss = args.alfa*kl_loss_mean + args.beta*reconstruction_loss
-        
+
         learning_rate = tf.train.exponential_decay(args.initial_learning_rate, global_step,
             args.learning_rate_decay_steps, args.learning_rate_decay_factor, staircase=True)
-        
+
         # Calculate gradients and make sure not to include parameters for the perceptual loss model
         opt = tf.train.AdamOptimizer(learning_rate)
         grads = opt.compute_gradients(total_loss, var_list=get_variables_to_train())
-        
+
         # Apply gradients
         apply_gradient_op = opt.apply_gradients(grads, global_step=global_step)
         with tf.control_dependencies([apply_gradient_op]):
@@ -157,7 +154,7 @@ def main(args):
 
         # Create a saver
         saver = tf.train.Saver(tf.trainable_variables(), max_to_keep=3)
-        
+
         facenet_saver = tf.train.Saver(get_facenet_variables_to_restore())
 
         # Start running operations on the Graph
@@ -177,19 +174,17 @@ def main(args):
                 pretrained_model_exp = os.path.expanduser(args.pretrained_model)
                 print('Restoring pretrained model: %s' % pretrained_model_exp)
                 facenet_saver.restore(sess, pretrained_model_exp)
-          
+
             log = {
                 'total_loss': np.zeros((0,), np.float),
                 'reconstruction_loss': np.zeros((0,), np.float),
                 'kl_loss': np.zeros((0,), np.float),
                 'learning_rate': np.zeros((0,), np.float),
                 }
-            
-            step = 0
+
             print('Running training')
-            while step < args.max_nrof_steps:
+            for step in range(1, args.max_nrof_steps + 1):
                 start_time = time.time()
-                step += 1
                 save_state = step>0 and (step % args.save_every_n_steps==0 or step==args.max_nrof_steps)
                 if save_state:
                     _, reconstruction_loss_, kl_loss_mean_, total_loss_, learning_rate_, rec_ = sess.run(

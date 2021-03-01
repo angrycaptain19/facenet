@@ -214,8 +214,7 @@ def prewhiten(x):
     mean = np.mean(x)
     std = np.std(x)
     std_adj = np.maximum(std, 1.0/np.sqrt(x.size))
-    y = np.multiply(np.subtract(x, mean), 1/std_adj)
-    return y  
+    return np.multiply(np.subtract(x, mean), 1/std_adj)  
 
 def crop(image, random_crop, image_size):
     if image.shape[1]>image_size:
@@ -263,8 +262,7 @@ def get_label_batch(label_data, batch_size, batch_index):
         x1 = label_data[j:nrof_examples]
         x2 = label_data[0:nrof_examples-j]
         batch = np.vstack([x1,x2])
-    batch_int = batch.astype(np.int64)
-    return batch_int
+    return batch.astype(np.int64)
 
 def get_batch(image_data, batch_size, batch_index):
     nrof_examples = np.size(image_data, 0)
@@ -275,16 +273,14 @@ def get_batch(image_data, batch_size, batch_index):
         x1 = image_data[j:nrof_examples,:,:,:]
         x2 = image_data[0:nrof_examples-j,:,:,:]
         batch = np.vstack([x1,x2])
-    batch_float = batch.astype(np.float32)
-    return batch_float
+    return batch.astype(np.float32)
 
 def get_triplet_batch(triplets, batch_index, batch_size):
     ax, px, nx = triplets
     a = get_batch(ax, int(batch_size/3), batch_index)
     p = get_batch(px, int(batch_size/3), batch_index)
     n = get_batch(nx, int(batch_size/3), batch_index)
-    batch = np.vstack([a, p, n])
-    return batch
+    return np.vstack([a, p, n])
 
 def get_learning_rate_from_file(filename, epoch):
     with open(filename, 'r') as f:
@@ -293,10 +289,7 @@ def get_learning_rate_from_file(filename, epoch):
             if line:
                 par = line.strip().split(':')
                 e = int(par[0])
-                if par[1]=='-':
-                    lr = -1
-                else:
-                    lr = float(par[1])
+                lr = -1 if par[1]=='-' else float(par[1])
                 if e <= epoch:
                     learning_rate = lr
                 else:
@@ -384,7 +377,7 @@ def load_model(model, input_map=None):
 def get_model_filenames(model_dir):
     files = os.listdir(model_dir)
     meta_files = [s for s in files if s.endswith('.meta')]
-    if len(meta_files)==0:
+    if not meta_files:
         raise ValueError('No meta file found in the model directory (%s)' % model_dir)
     elif len(meta_files)>1:
         raise ValueError('There should not be more than one meta file in the model directory (%s)' % model_dir)
@@ -545,8 +538,7 @@ def store_revision_info(src_path, output_dir, arg_string):
 def list_variables(filename):
     reader = training.NewCheckpointReader(filename)
     variable_map = reader.get_variable_to_shape_map()
-    names = sorted(variable_map.keys())
-    return names
+    return sorted(variable_map.keys())
 
 def put_images_on_grid(images, shape=(16,8)):
     nrof_images = images.shape[0]

@@ -93,25 +93,17 @@ def main(args):
                         if len(np.nonzero(labels == i)[0]) > len(np.nonzero(labels == largest_cluster)[0]):
                             largest_cluster = i
                     print('Saving largest cluster (Cluster: {})'.format(largest_cluster))
-                    cnt = 1
-                    for i in np.nonzero(labels == largest_cluster)[0]:
+                    for cnt, i in enumerate(np.nonzero(labels == largest_cluster)[0], start=1):
                         misc.imsave(os.path.join(args.out_dir, str(cnt) + '.png'), images[i])
-                        cnt += 1
                 else:
                     print('Saving all clusters')
                     for i in range(no_clusters):
-                        cnt = 1
                         print('Cluster {}: {}'.format(i, np.nonzero(labels == i)[0]))
                         path = os.path.join(args.out_dir, str(i))
                         if not os.path.exists(path):
                             os.makedirs(path)
-                            for j in np.nonzero(labels == i)[0]:
-                                misc.imsave(os.path.join(path, str(cnt) + '.png'), images[j])
-                                cnt += 1
-                        else:
-                            for j in np.nonzero(labels == i)[0]:
-                                misc.imsave(os.path.join(path, str(cnt) + '.png'), images[j])
-                                cnt += 1
+                        for cnt, j in enumerate(np.nonzero(labels == i)[0], start=1):
+                            misc.imsave(os.path.join(path, str(cnt) + '.png'), images[j])
 
 
 def align_data(image_list, image_size, margin, pnet, rnet, onet):
@@ -139,9 +131,8 @@ def align_data(image_list, image_size, margin, pnet, rnet, onet):
                     prewhitened = facenet.prewhiten(aligned)
                     img_list.append(prewhitened)
 
-    if len(img_list) > 0:
-        images = np.stack(img_list)
-        return images
+    if img_list:
+        return np.stack(img_list)
     else:
         return None
 
