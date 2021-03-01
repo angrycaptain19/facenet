@@ -39,11 +39,8 @@ def conv(inpOp, nIn, nOut, kH, kW, dH, dW, padType, name, phase_train=True, use_
             initializer=tf.truncated_normal_initializer(stddev=1e-1),
             regularizer=l2_regularizer, dtype=inpOp.dtype)
         cnv = tf.nn.conv2d(inpOp, kernel, [1, dH, dW, 1], padding=padType)
-        
-        if use_batch_norm:
-            conv_bn = batch_norm(cnv, phase_train)
-        else:
-            conv_bn = cnv
+
+        conv_bn = batch_norm(cnv, phase_train) if use_batch_norm else cnv
         biases = tf.get_variable("biases", [nOut], initializer=tf.constant_initializer(), dtype=inpOp.dtype)
         bias = tf.nn.bias_add(conv_bn, biases)
         conv1 = tf.nn.relu(bias)
@@ -77,22 +74,14 @@ def l2_loss(tensor, weight=1.0, scope=None):
 
 def lppool(inpOp, pnorm, kH, kW, dH, dW, padding, name):
     with tf.variable_scope(name):
-        if pnorm == 2:
-            pwr = tf.square(inpOp)
-        else:
-            pwr = tf.pow(inpOp, pnorm)
-          
+        pwr = tf.square(inpOp) if pnorm == 2 else tf.pow(inpOp, pnorm)
         subsamp = tf.nn.avg_pool(pwr,
                               ksize=[1, kH, kW, 1],
                               strides=[1, dH, dW, 1],
                               padding=padding)
         subsamp_sum = tf.multiply(subsamp, kH*kW)
-        
-        if pnorm == 2:
-            out = tf.sqrt(subsamp_sum)
-        else:
-            out = tf.pow(subsamp_sum, 1/pnorm)
-    
+
+        out = tf.sqrt(subsamp_sum) if pnorm == 2 else tf.pow(subsamp_sum, 1/pnorm)
     return out
 
 def mpool(inpOp, kH, kW, dH, dW, padding, name):
@@ -155,33 +144,30 @@ def inception(inp, inSize, ks, o1s, o2s1, o2s2, o3s1, o3s2, o4s1, o4s2, o4s3, po
     print('outputSize = {%d,%d}' % (o2s2,o3s2))
     print('reduceSize = {%d,%d,%d,%d}' % (o2s1,o3s1,o4s2,o1s))
     print('pooling = {%s, %d, %d, %d, %d}' % (poolType, o4s1, o4s1, o4s3, o4s3))
-    if (o4s2>0):
-        o4 = o4s2
-    else:
-        o4 = inSize
+    o4 = o4s2 if (o4s2>0) else inSize
     print('outputSize = ', o1s+o2s2+o3s2+o4)
     print()
-    
+
     net = []
-    
+
     with tf.variable_scope(name):
         with tf.variable_scope('branch1_1x1'):
             if o1s>0:
                 conv1 = conv(inp, inSize, o1s, 1, 1, 1, 1, 'SAME', 'conv1x1', phase_train=phase_train, use_batch_norm=use_batch_norm, weight_decay=weight_decay)
                 net.append(conv1)
-      
+
         with tf.variable_scope('branch2_3x3'):
             if o2s1>0:
                 conv3a = conv(inp, inSize, o2s1, 1, 1, 1, 1, 'SAME', 'conv1x1', phase_train=phase_train, use_batch_norm=use_batch_norm, weight_decay=weight_decay)
                 conv3 = conv(conv3a, o2s1, o2s2, 3, 3, ks, ks, 'SAME', 'conv3x3', phase_train=phase_train, use_batch_norm=use_batch_norm, weight_decay=weight_decay)
                 net.append(conv3)
-      
+
         with tf.variable_scope('branch3_5x5'):
             if o3s1>0:
                 conv5a = conv(inp, inSize, o3s1, 1, 1, 1, 1, 'SAME', 'conv1x1', phase_train=phase_train, use_batch_norm=use_batch_norm, weight_decay=weight_decay)
                 conv5 = conv(conv5a, o3s1, o3s2, 5, 5, ks, ks, 'SAME', 'conv5x5', phase_train=phase_train, use_batch_norm=use_batch_norm, weight_decay=weight_decay)
                 net.append(conv5)
-      
+
         with tf.variable_scope('branch4_pool'):
             if poolType=='MAX':
                 pool = mpool(inp, o4s1, o4s1, o4s3, o4s3, 'SAME', 'pool')
@@ -189,12 +175,12 @@ def inception(inp, inSize, ks, o1s, o2s1, o2s2, o3s1, o3s2, o4s1, o4s2, o4s3, po
                 pool = lppool(inp, 2, o4s1, o4s1, o4s3, o4s3, 'SAME', 'pool')
             else:
                 raise ValueError('Invalid pooling type "%s"' % poolType)
-            
+
             if o4s2>0:
                 pool_conv = conv(pool, inSize, o4s2, 1, 1, 1, 1, 'SAME', 'conv1x1', phase_train=phase_train, use_batch_norm=use_batch_norm, weight_decay=weight_decay)
             else:
                 pool_conv = pool
             net.append(pool_conv)
-      
+
         incept = array_ops.concat(net, 3, name=name)
     return incept

@@ -101,10 +101,7 @@ def main(args):
             start_time = time.time()
 
             for i in range(nrof_batches):
-                if i == nrof_batches -1:
-                    n = nrof_images
-                else:
-                    n = i*batch_size + batch_size
+                n = nrof_images if i == nrof_batches -1 else i*batch_size + batch_size
                 # Get images for the batch
                 if args.is_aligned is True:
                     images = facenet.load_data(image_list[i*batch_size:n], False, False, args.image_size)
@@ -158,8 +155,7 @@ def load_and_align_data(image_paths, image_size, margin, gpu_memory_fraction):
         aligned = misc.imresize(cropped, (image_size, image_size), interp='bilinear')
         prewhitened = facenet.prewhiten(aligned)
         img_list[i] = prewhitened
-    images = np.stack(img_list)
-    return images
+    return np.stack(img_list)
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()

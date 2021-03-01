@@ -13,10 +13,9 @@ def fire_module(inputs,
                 outputs_collections=None):
     with tf.variable_scope(scope, 'fire', [inputs], reuse=reuse):
         with slim.arg_scope([slim.conv2d, slim.max_pool2d],
-                            outputs_collections=None):
+                                    outputs_collections=None):
             net = squeeze(inputs, squeeze_depth)
-            outputs = expand(net, expand_depth)
-            return outputs
+            return expand(net, expand_depth)
 
 def squeeze(inputs, num_outputs):
     return slim.conv2d(inputs, num_outputs, [1, 1], stride=1, scope='squeeze')

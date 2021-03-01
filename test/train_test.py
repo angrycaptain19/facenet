@@ -33,8 +33,7 @@ def memory_usage_psutil():
     # return the memory usage in MB
     import psutil
     process = psutil.Process(os.getpid())
-    mem = process.memory_info()[0] / float(2 ** 20)
-    return mem
+    return process.memory_info()[0] / float(2 ** 20)
 
 def align_dataset_if_needed(self):
     if not os.path.exists('data/lfw_aligned'):

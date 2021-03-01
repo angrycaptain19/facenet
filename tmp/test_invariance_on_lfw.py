@@ -42,23 +42,23 @@ def main(args):
     
     pairs = lfw.read_pairs(os.path.expanduser(args.lfw_pairs))
     paths, actual_issame = lfw.get_paths(os.path.expanduser(args.lfw_dir), pairs)
-    result_dir = '../data/'
     plt.ioff()  # Disable interactive plotting mode
-    
+
     with tf.Graph().as_default():
 
         with tf.Session() as sess:
-    
+            
             # Load the model
             print('Loading model "%s"' % args.model_file)
             facenet.load_model(args.model_file)
-            
+
             # Get input and output tensors
             images_placeholder = tf.get_default_graph().get_tensor_by_name("input:0")
             phase_train_placeholder = tf.get_default_graph().get_tensor_by_name("phase_train:0")
             embeddings = tf.get_default_graph().get_tensor_by_name("embeddings:0")
             image_size = int(images_placeholder.get_shape()[1])
-            
+
+            result_dir = '../data/'
             # Run test on LFW to check accuracy for different horizontal/vertical translations of input images
             if args.nrof_offsets>0:
                 step = 3
@@ -164,8 +164,7 @@ def scale_images(images, scale, image_size):
     images_scale = np.stack(images_scale_list,axis=0)
     sz1 = images_scale.shape[1]/2
     sz2 = image_size/2
-    images_crop = images_scale[:,(sz1-sz2):(sz1+sz2),(sz1-sz2):(sz1+sz2),:]
-    return images_crop
+    return images_scale[:,(sz1-sz2):(sz1+sz2),(sz1-sz2):(sz1+sz2),:]
 
 def rotate_images(images, angle, image_size):
     images_list = [None] * images.shape[0]
@@ -174,15 +173,13 @@ def rotate_images(images, angle, image_size):
     images_rot = np.stack(images_list,axis=0)
     sz1 = images_rot.shape[1]/2
     sz2 = image_size/2
-    images_crop = images_rot[:,(sz1-sz2):(sz1+sz2),(sz1-sz2):(sz1+sz2),:]
-    return images_crop
+    return images_rot[:,(sz1-sz2):(sz1+sz2),(sz1-sz2):(sz1+sz2),:]
 
 def translate_images(images, offset, image_size):
     h, v = offset
     sz1 = images.shape[1]/2
     sz2 = image_size/2
-    images_crop = images[:,(sz1-sz2+v):(sz1+sz2+v),(sz1-sz2+h):(sz1+sz2+h),:]
-    return images_crop
+    return images[:,(sz1-sz2+v):(sz1+sz2+v),(sz1-sz2+h):(sz1+sz2+h),:]
 
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()

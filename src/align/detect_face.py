@@ -195,8 +195,7 @@ class Network(object):
             weights = self.make_var('weights', shape=[dim, num_out])
             biases = self.make_var('biases', [num_out])
             op = tf.nn.relu_layer if relu else tf.nn.xw_plus_b
-            fc = op(feed_in, weights, biases, name=name)
-            return fc
+            return op(feed_in, weights, biases, name=name)
 
 
     """
@@ -210,8 +209,7 @@ class Network(object):
         max_axis = tf.reduce_max(target, axis, keepdims=True)
         target_exp = tf.exp(target-max_axis)
         normalize = tf.reduce_sum(target_exp, axis, keepdims=True)
-        softmax = tf.div(target_exp, normalize, name)
-        return softmax
+        return tf.div(target_exp, normalize, name)
     
 class PNet(Network):
     def setup(self):

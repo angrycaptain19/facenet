@@ -41,10 +41,10 @@ class Vae(generative.models.vae_base.Vae):
   
     def encoder(self, images, is_training):
         activation_fn = leaky_relu  # tf.nn.relu
-        weight_decay = 0.0
         with tf.variable_scope('encoder'):
             with slim.arg_scope([slim.batch_norm],
-                                is_training=is_training):
+                                        is_training=is_training):
+                weight_decay = 0.0
                 with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                     weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                     weights_regularizer=slim.l2_regularizer(weight_decay),
@@ -61,10 +61,10 @@ class Vae(generative.models.vae_base.Vae):
       
     def decoder(self, latent_var, is_training):
         activation_fn = leaky_relu  # tf.nn.relu
-        weight_decay = 0.0 
         with tf.variable_scope('decoder'):
             with slim.arg_scope([slim.batch_norm],
-                                is_training=is_training):
+                                        is_training=is_training):
+                weight_decay = 0.0
                 with slim.arg_scope([slim.conv2d, slim.fully_connected],
                                     weights_initializer=tf.truncated_normal_initializer(stddev=0.1),
                                     weights_regularizer=slim.l2_regularizer(weight_decay),
@@ -72,19 +72,19 @@ class Vae(generative.models.vae_base.Vae):
                                     normalizer_params=self.batch_norm_params):
                     net = slim.fully_connected(latent_var, 4096, activation_fn=None, normalizer_fn=None, scope='Fc_1')
                     net = tf.reshape(net, [-1,4,4,256], name='Reshape')
-                    
+
                     net = tf.image.resize_nearest_neighbor(net, size=(8,8), name='Upsample_1')
                     net = slim.conv2d(net, 128, [3, 3], 1, activation_fn=activation_fn, scope='Conv2d_1')
-            
+
                     net = tf.image.resize_nearest_neighbor(net, size=(16,16), name='Upsample_2')
                     net = slim.conv2d(net, 64, [3, 3], 1, activation_fn=activation_fn, scope='Conv2d_2')
-            
+
                     net = tf.image.resize_nearest_neighbor(net, size=(32,32), name='Upsample_3')
                     net = slim.conv2d(net, 32, [3, 3], 1, activation_fn=activation_fn, scope='Conv2d_3')
-            
+
                     net = tf.image.resize_nearest_neighbor(net, size=(64,64), name='Upsample_4')
                     net = slim.conv2d(net, 3, [3, 3], 1, activation_fn=None, scope='Conv2d_4')
-                
+
         return net
       
 def leaky_relu(x):
